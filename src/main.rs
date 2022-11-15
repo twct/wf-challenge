@@ -31,8 +31,11 @@ async fn visit(node: &Node, hash_map: &mut HashMap<String, Vec<String>>) -> Resu
         }
     }
 
-    for child_node_id in &node.child_node_ids {
-        let nodes = call_api::<Vec<Node>>(child_node_id).await?;
+    let child_node_ids = &node.child_node_ids.join(",");
+
+    if !child_node_ids.is_empty() {
+        let nodes = call_api::<Vec<Node>>(&child_node_ids).await?;
+
         for node in nodes {
             println!("Visiting node {:?}", node.id);
             visit(&node, hash_map).await?;
@@ -60,7 +63,7 @@ async fn main() -> Result<(), Error> {
 
     match hash_map.iter().max_by_key(|(_k, v)| v.len()).map(|(k, v)| (k, v)) {
         Some((id, vec)) => {
-            println!("Most common: {}, {} time(s)", id, vec.len());
+            println!("Most common: {:?}, {} time(s)", id, vec.len());
         },
         None => {
             eprintln!("Failed to find most common node ID");
