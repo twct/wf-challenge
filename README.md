@@ -1,5 +1,7 @@
 # wf-challenge
 
+**NOTE: This branch contains changes after the 90 minute timer expired. Just a few minor house-keeping items I wish were in the [main](/twct/wf-challenge/tree/main) branch.**
+
 ### Getting started with local development
 
 **Install Rust and Cargo**
