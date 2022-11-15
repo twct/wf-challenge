@@ -2,8 +2,10 @@ use std::collections::HashMap;
 use async_recursion::async_recursion;
 use serde::{Deserialize, de::DeserializeOwned};
 use dotenv::dotenv;
+use crate::error::Error;
 
 mod env;
+mod error;
 
 #[derive(Deserialize, Debug)]
 struct Node {
@@ -11,7 +13,7 @@ struct Node {
     child_node_ids: Vec<String>
 }
 
-async fn call_api<T: DeserializeOwned>(node_ids: &str) -> Result<T, Box<dyn std::error::Error>> {
+async fn call_api<T: DeserializeOwned>(node_ids: &str) -> Result<T, Error> {
     let resp = reqwest::get(format!("{}/nodes/{}", env::API_ENDPOINT.as_str(), node_ids))
         .await?
         .json::<T>()
@@ -21,7 +23,7 @@ async fn call_api<T: DeserializeOwned>(node_ids: &str) -> Result<T, Box<dyn std:
 }
 
 #[async_recursion]
-async fn visit(node: &Node, hash_map: &mut HashMap<String, Vec<String>>) -> Result<(), Box<dyn std::error::Error>> {
+async fn visit(node: &Node, hash_map: &mut HashMap<String, Vec<String>>) -> Result<(), Error> {
     match hash_map.get_mut(&node.id) {
         Some(vec) => vec.push(node.id.to_owned()),
         None => {
@@ -41,7 +43,7 @@ async fn visit(node: &Node, hash_map: &mut HashMap<String, Vec<String>>) -> Resu
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Error> {
     dotenv().ok();
 
     let root_node_id = "089ef556-dfff-4ff2-9733-654645be56fe";
@@ -56,9 +58,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Unique IDs: {}", hash_map.keys().len());
 
-    match hash_map.iter().max_by_key(|(_k, v)| v.len()).map(|(k, _v)| k) {
-        Some(id) => {
-            println!("Most common: {}, {} time(s)", id, hash_map.get(id).unwrap().len());
+    match hash_map.iter().max_by_key(|(_k, v)| v.len()).map(|(k, v)| (k, v)) {
+        Some((id, vec)) => {
+            println!("Most common: {}, {} time(s)", id, vec.len());
         },
         None => {
             eprintln!("Failed to find most common node ID");
